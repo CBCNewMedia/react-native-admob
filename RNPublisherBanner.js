@@ -38,9 +38,7 @@ class PublisherBanner extends Component {
       return;
     }
 
-    if (Platform.OS === 'android' || (Platform.OS === 'ios' && fluid !== true)) {
-      this.setState({ style: { width, height } });
-    }
+    this.setState({ style: { width, height } });
 
     if (this.props.onSizeChange) {
       this.props.onSizeChange({ width, height, fluid });
