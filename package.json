@@ -1,6 +1,6 @@
 {
   "name": "@cbcnewmedia/react-native-admob",
-  "version": "2.0.0-beta.6",
+  "version": "2.0.1",
   "description": "A react-native component for Google AdMob banners and interstitials",
   "author": "Simon Bugert <simon.bugert@gmail.com>",
   "main": "index.js",
