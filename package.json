@@ -1,5 +1,5 @@
 {
-  "name": "react-native-admob",
+  "name": "@cbcnewmedia/react-native-admob",
   "version": "2.0.0-beta.6",
   "description": "A react-native component for Google AdMob banners and interstitials",
   "author": "Simon Bugert <simon.bugert@gmail.com>",
@@ -7,7 +7,7 @@
   "license": "BSD-2-Clause",
   "repository": {
     "type": "git",
-    "url": "git@github.com:sbugert/react-native-admob.git"
+    "url": "git@github.com/CBCNewMedia/react-native-admob.git"
   },
   "dependencies": {
     "prop-types": "^15.7.2"

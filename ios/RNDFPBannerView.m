@@ -53,8 +53,11 @@
 #pragma clang diagnostic pop
 
 - (void)loadBanner {
-    GADRequest *request = [GADRequest request];
+    DFPRequest *request = [DFPRequest request];
     request.testDevices = _testDevices;
+    if (_customTargeting != nil) {
+        request.customTargeting = _customTargeting;
+    }
     [_bannerView loadRequest:request];
 }
 
@@ -90,6 +93,7 @@
 {
     if (self.onSizeChange) {
         self.onSizeChange(@{
+                            @"fluid": @(GADAdSizeIsFluid(adView.adSize)),
                             @"width": @(adView.frame.size.width),
                             @"height": @(adView.frame.size.height) });
     }
@@ -139,6 +143,7 @@ didFailToReceiveAdWithError:(GADRequestError *)error
 {
     CGSize adSize = CGSizeFromGADAdSize(size);
     self.onSizeChange(@{
+                        @"fluid": @(GADAdSizeIsFluid(size)),
                         @"width": @(adSize.width),
                         @"height": @(adSize.height) });
 }

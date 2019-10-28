@@ -1,11 +1,24 @@
 package com.sbugert.rnadmob;
 
+import android.app.Activity;
 import android.content.Context;
+import android.os.Build;
 import android.support.annotation.Nullable;
+import android.util.DisplayMetrics;
+import android.view.Display;
+import android.view.Gravity;
 import android.view.View;
+import android.view.WindowManager;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.util.Log;
 
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.ReadableNativeMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableNativeArray;
@@ -14,6 +27,7 @@ import com.facebook.react.uimanager.PixelUtil;
 import com.facebook.react.uimanager.ViewGroupManager;
 import com.facebook.react.uimanager.annotations.ReactProp;
 import com.facebook.react.uimanager.ThemedReactContext;
+
 import com.facebook.react.uimanager.events.RCTEventEmitter;
 import com.facebook.react.views.view.ReactViewGroup;
 import com.google.android.gms.ads.AdListener;
@@ -22,11 +36,14 @@ import com.google.android.gms.ads.doubleclick.PublisherAdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.doubleclick.PublisherAdView;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.lang.Math;
+import java.lang.Double;
 
-class ReactPublisherAdView extends ReactViewGroup implements AppEventListener {
+class ReactPublisherAdView extends RelativeLayout implements AppEventListener, LifecycleEventListener {
 
     protected PublisherAdView adView;
 
@@ -34,6 +51,8 @@ class ReactPublisherAdView extends ReactViewGroup implements AppEventListener {
     AdSize[] validAdSizes;
     String adUnitID;
     AdSize adSize;
+    Double fluidRatio;
+    Map<String, Object> customTargeting;
 
     public ReactPublisherAdView(final Context context) {
         super(context);
@@ -49,12 +68,6 @@ class ReactPublisherAdView extends ReactViewGroup implements AppEventListener {
         this.adView.setAdListener(new AdListener() {
             @Override
             public void onAdLoaded() {
-                int width = adView.getAdSize().getWidthInPixels(context);
-                int height = adView.getAdSize().getHeightInPixels(context);
-                int left = adView.getLeft();
-                int top = adView.getTop();
-                adView.measure(width, height);
-                adView.layout(left, top, left + width, top + height);
                 sendOnSizeChangeEvent();
                 sendEvent(RNPublisherBannerViewManager.EVENT_AD_LOADED, null);
             }
@@ -107,16 +120,40 @@ class ReactPublisherAdView extends ReactViewGroup implements AppEventListener {
         ReactContext reactContext = (ReactContext) getContext();
         WritableMap event = Arguments.createMap();
         AdSize adSize = this.adView.getAdSize();
-        if (adSize == AdSize.SMART_BANNER) {
+        AdSize[] adSizes = this.adView.getAdSizes();
+
+        if (adSizes != null && adSizes.length >= 1 && adSizes[0].isFluid()) {
+            width = (int) PixelUtil.toDIPFromPixel(getDeviceWidth());
+            height = (int) Math.round(width / (this.fluidRatio != null ? this.fluidRatio.doubleValue() : 1.5));
+        } else if (adSize == AdSize.SMART_BANNER) {
             width = (int) PixelUtil.toDIPFromPixel(adSize.getWidthInPixels(reactContext));
             height = (int) PixelUtil.toDIPFromPixel(adSize.getHeightInPixels(reactContext));
         } else {
             width = adSize.getWidth();
             height = adSize.getHeight();
         }
+
         event.putDouble("width", width);
         event.putDouble("height", height);
+        if (this.fluidRatio != null) {
+          event.putDouble("fluidRatio", this.fluidRatio.doubleValue());
+        }
         sendEvent(RNPublisherBannerViewManager.EVENT_SIZE_CHANGE, event);
+    }
+
+    private int getDeviceWidth() {
+        ReactContext reactContext = (ReactContext) getContext();
+        WindowManager windowManager = (WindowManager) reactContext.getSystemService(Context.WINDOW_SERVICE);
+        // Get display metrics to see if we can differentiate handsets and tablets.
+        // NOTE: for API level 16 the metrics will exclude window decor.
+        DisplayMetrics metrics = new DisplayMetrics();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            windowManager.getDefaultDisplay().getRealMetrics(metrics);
+        } else {
+            windowManager.getDefaultDisplay().getMetrics(metrics);
+        }
+        int deviceWidth = metrics.widthPixels;
+        return deviceWidth;
     }
 
     private void sendEvent(String name, @Nullable WritableMap event) {
@@ -155,6 +192,11 @@ class ReactPublisherAdView extends ReactViewGroup implements AppEventListener {
                 adRequestBuilder.addTestDevice(testDevice);
             }
         }
+        if (customTargeting != null) {
+            for (String key : customTargeting.keySet()) {
+                adRequestBuilder.addCustomTargeting(key, String.valueOf(customTargeting.get(key)));
+            }
+        }
         PublisherAdRequest adRequest = adRequestBuilder.build();
         this.adView.loadAd(adRequest);
     }
@@ -181,6 +223,14 @@ class ReactPublisherAdView extends ReactViewGroup implements AppEventListener {
         this.validAdSizes = adSizes;
     }
 
+    public void setFluidRatio(double fluidRatio) {
+        this.fluidRatio = new Double(fluidRatio);
+    }
+
+    public void setCustomTargeting(Map<String, Object> customTargeting) {
+      this.customTargeting = customTargeting;
+    }
+
     @Override
     public void onAppEvent(String name, String info) {
         WritableMap event = Arguments.createMap();
@@ -188,6 +238,37 @@ class ReactPublisherAdView extends ReactViewGroup implements AppEventListener {
         event.putString("info", info);
         sendEvent(RNPublisherBannerViewManager.EVENT_APP_EVENT, event);
     }
+
+    @Override
+    public void onHostDestroy() {
+        this.adView.destroy();
+    }
+
+    @Override
+    public void onHostResume() {
+        this.adView.resume();
+    }
+
+    @Override
+    public void onHostPause() {
+        this.adView.pause();
+    }
+
+    @Override
+    public void requestLayout() {
+        super.requestLayout();
+        post(measureAndLayout);
+    }
+
+    private final Runnable measureAndLayout = new Runnable() {
+        @Override
+        public void run() {
+            measure(
+                    MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.EXACTLY),
+                    MeasureSpec.makeMeasureSpec(getHeight(), MeasureSpec.EXACTLY));
+            layout(getLeft(), getTop(), getRight(), getBottom());
+        }
+    };
 }
 
 public class RNPublisherBannerViewManager extends ViewGroupManager<ReactPublisherAdView> {
@@ -198,6 +279,8 @@ public class RNPublisherBannerViewManager extends ViewGroupManager<ReactPublishe
     public static final String PROP_VALID_AD_SIZES = "validAdSizes";
     public static final String PROP_AD_UNIT_ID = "adUnitID";
     public static final String PROP_TEST_DEVICES = "testDevices";
+    public static final String PROP_FLUID_RATIO = "fluidRatio";
+    public static final String PROP_CUSTOM_TARGETING = "customTargeting";
 
     public static final String EVENT_SIZE_CHANGE = "onSizeChange";
     public static final String EVENT_AD_LOADED = "onAdLoaded";
@@ -223,6 +306,14 @@ public class RNPublisherBannerViewManager extends ViewGroupManager<ReactPublishe
     @Override
     public void addView(ReactPublisherAdView parent, View child, int index) {
         throw new RuntimeException("RNPublisherBannerView cannot have subviews");
+    }
+
+    @Override
+    public void onDropViewInstance(ReactPublisherAdView view) {
+        view.adView.setAppEventListener(null);
+        view.adView.setAdListener(null);
+        view.adView.destroy();
+        super.onDropViewInstance(view);
     }
 
     @Override
@@ -276,6 +367,18 @@ public class RNPublisherBannerViewManager extends ViewGroupManager<ReactPublishe
         view.setTestDevices(list.toArray(new String[list.size()]));
     }
 
+    @ReactProp(name = PROP_CUSTOM_TARGETING)
+    public void setPropCustomTargeting(final ReactPublisherAdView view, final ReadableMap customTargeting) {
+        ReadableNativeMap nativeMap = (ReadableNativeMap) customTargeting;
+        Map<String, Object> map = nativeMap.toHashMap();
+        view.setCustomTargeting(map);
+    }
+
+    @ReactProp(name=PROP_FLUID_RATIO)
+    public void setPropFluidRatio(final ReactPublisherAdView view, final double fluidRatio) {
+        view.setFluidRatio(fluidRatio);
+    }
+
     private AdSize getAdSizeFromString(String adSize) {
         switch (adSize) {
             case "banner":
@@ -294,6 +397,8 @@ public class RNPublisherBannerViewManager extends ViewGroupManager<ReactPublishe
                 return AdSize.SMART_BANNER;
             case "smartBanner":
                 return AdSize.SMART_BANNER;
+            case "fluid":
+                return AdSize.FLUID;
             default:
                 return AdSize.BANNER;
         }

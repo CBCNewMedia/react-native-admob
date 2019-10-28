@@ -71,3 +71,5 @@ Example/.buckconfig
 Example/.vscode/
 Example/android/app/BUCK
 /yarn.lock
+
+.history/

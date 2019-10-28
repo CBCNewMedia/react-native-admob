@@ -1,10 +1,11 @@
-import { arrayOf, func, string } from 'prop-types';
+import { arrayOf, func, string, object } from 'prop-types';
 import React, { Component } from 'react';
 import {
   findNodeHandle,
   requireNativeComponent,
   UIManager,
   ViewPropTypes,
+  Platform,
 } from 'react-native';
 import { createErrorFromErrorData } from './utils';
 
@@ -32,10 +33,17 @@ class PublisherBanner extends Component {
   }
 
   handleSizeChange(event) {
-    const { height, width } = event.nativeEvent;
-    this.setState({ style: { width, height } });
+    const { height, width, fluid } = event.nativeEvent;
+    if (height === this.state.style.height && width === this.state.style.width) {
+      return;
+    }
+
+    if (Platform.OS === 'android' || (Platform.OS === 'ios' && fluid !== true)) {
+      this.setState({ style: { width, height } });
+    }
+
     if (this.props.onSizeChange) {
-      this.props.onSizeChange({ width, height });
+      this.props.onSizeChange({ width, height, fluid });
     }
   }
 
@@ -104,6 +112,11 @@ PublisherBanner.propTypes = {
   testDevices: arrayOf(string),
 
   onSizeChange: func,
+
+  /**
+  * custom targeting params
+  */
+  customTargeting: object,
 
   /**
    * DFP library events
