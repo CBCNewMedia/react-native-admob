@@ -92,10 +92,17 @@
 - (void)adViewDidReceiveAd:(DFPBannerView *)adView
 {
     if (self.onSizeChange) {
-        self.onSizeChange(@{
-                            @"fluid": @(GADAdSizeIsFluid(adView.adSize)),
-                            @"width": @(adView.frame.size.width),
-                            @"height": @(adView.frame.size.height) });
+        if (GADAdSizeIsFluid(adView.adSize)) {
+            CGFloat screenWidth = [[UIScreen mainScreen] bounds].size.width;
+            self.onSizeChange(@{
+                                @"width": @(screenWidth),
+                                @"height": @(screenWidth / (_fluidRatio ? [_fluidRatio doubleValue] : 1.5)) });
+        }
+        else {
+            self.onSizeChange(@{
+                                @"width": @(adView.frame.size.width),
+                                @"height": @(adView.frame.size.height) });
+        }
     }
     if (self.onAdLoaded) {
         self.onAdLoaded(@{});
@@ -142,10 +149,18 @@ didFailToReceiveAdWithError:(GADRequestError *)error
 - (void)adView:(GADBannerView *)bannerView willChangeAdSizeTo:(GADAdSize)size
 {
     CGSize adSize = CGSizeFromGADAdSize(size);
-    self.onSizeChange(@{
-                        @"fluid": @(GADAdSizeIsFluid(size)),
-                        @"width": @(adSize.width),
-                        @"height": @(adSize.height) });
+    if (GADAdSizeIsFluid(size)) {
+        CGFloat screenWidth = [[UIScreen mainScreen] bounds].size.width;
+        self.onSizeChange(@{
+                            @"width": @(screenWidth),
+                            @"height": @(screenWidth / (_fluidRatio ? [_fluidRatio doubleValue] : 1.5)) });
+    }
+    else {
+        self.onSizeChange(@{
+                            @"width": @(adSize.width),
+                            @"height": @(adSize.height) });
+
+    }
 }
 
 # pragma mark GADAppEventDelegate

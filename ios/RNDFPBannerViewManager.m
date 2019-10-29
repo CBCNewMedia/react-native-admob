@@ -37,6 +37,7 @@ RCT_REMAP_VIEW_PROPERTY(adUnitID, _bannerView.adUnitID, NSString)
 RCT_EXPORT_VIEW_PROPERTY(validAdSizes, NSArray)
 RCT_EXPORT_VIEW_PROPERTY(testDevices, NSArray)
 RCT_EXPORT_VIEW_PROPERTY(customTargeting, NSDictionary)
+RCT_EXPORT_VIEW_PROPERTY(fluidRatio, NSNumber)
 
 RCT_EXPORT_VIEW_PROPERTY(onSizeChange, RCTBubblingEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onAppEvent, RCTBubblingEventBlock)

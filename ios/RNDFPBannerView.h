@@ -13,6 +13,7 @@
 @property (nonatomic, copy) NSArray *validAdSizes;
 @property (nonatomic, copy) NSArray *testDevices;
 @property (nonatomic, copy) NSDictionary *customTargeting;
+@property (nonatomic, copy) NSNumber *fluidRatio;
 
 @property (nonatomic, copy) RCTBubblingEventBlock onSizeChange;
 @property (nonatomic, copy) RCTBubblingEventBlock onAppEvent;

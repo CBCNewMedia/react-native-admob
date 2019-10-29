@@ -33,7 +33,7 @@ class PublisherBanner extends Component {
   }
 
   handleSizeChange(event) {
-    const { height, width, fluid } = event.nativeEvent;
+    const { height, width } = event.nativeEvent;
     if (height === this.state.style.height && width === this.state.style.width) {
       return;
     }
@@ -41,7 +41,7 @@ class PublisherBanner extends Component {
     this.setState({ style: { width, height } });
 
     if (this.props.onSizeChange) {
-      this.props.onSizeChange({ width, height, fluid });
+      this.props.onSizeChange({ width, height });
     }
   }
 
