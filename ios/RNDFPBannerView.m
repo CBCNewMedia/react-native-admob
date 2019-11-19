@@ -86,6 +86,24 @@
     _bannerView.frame = self.bounds;
 }
 
+static void handleFluidSize (RNDFPBannerView *me, CGSize size)
+{
+    // When we have fluid and mediumRectangle (300x250) as valid ad sizes, GADAdSizeIsFluid always returns true
+    // and when it's a 300x250 the adSize return 0 for width (idk why) and 250 for height. So we're using that
+    // to determine when we get a mediumRectangle and we set the size accordingly.
+    if (size.height == 250) {
+        me.onSizeChange(@{
+                            @"width": @300,
+                            @"height": @250 });
+    }
+    else {
+        CGFloat screenWidth = [[UIScreen mainScreen] bounds].size.width;
+        me.onSizeChange(@{
+                            @"width": @(screenWidth),
+                            @"height": @(screenWidth / (me.fluidRatio ? [me.fluidRatio doubleValue] : 1.5)) });
+    }
+}
+
 # pragma mark GADBannerViewDelegate
 
 /// Tells the delegate an ad request loaded an ad.
@@ -93,10 +111,8 @@
 {
     if (self.onSizeChange) {
         if (GADAdSizeIsFluid(adView.adSize)) {
-            CGFloat screenWidth = [[UIScreen mainScreen] bounds].size.width;
-            self.onSizeChange(@{
-                                @"width": @(screenWidth),
-                                @"height": @(screenWidth / (_fluidRatio ? [_fluidRatio doubleValue] : 1.5)) });
+            CGSize adSize = CGSizeFromGADAdSize(adView.adSize);
+            handleFluidSize(self, adSize);
         }
         else {
             self.onSizeChange(@{
@@ -150,16 +166,12 @@ didFailToReceiveAdWithError:(GADRequestError *)error
 {
     CGSize adSize = CGSizeFromGADAdSize(size);
     if (GADAdSizeIsFluid(size)) {
-        CGFloat screenWidth = [[UIScreen mainScreen] bounds].size.width;
-        self.onSizeChange(@{
-                            @"width": @(screenWidth),
-                            @"height": @(screenWidth / (_fluidRatio ? [_fluidRatio doubleValue] : 1.5)) });
+        handleFluidSize(self, adSize);
     }
     else {
         self.onSizeChange(@{
                             @"width": @(adSize.width),
                             @"height": @(adSize.height) });
-
     }
 }
 
