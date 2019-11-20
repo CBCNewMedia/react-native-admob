@@ -5,7 +5,6 @@ import {
   requireNativeComponent,
   UIManager,
   ViewPropTypes,
-  Platform,
 } from 'react-native';
 import { createErrorFromErrorData } from './utils';
 
