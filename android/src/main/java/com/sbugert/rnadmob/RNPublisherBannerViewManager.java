@@ -122,9 +122,17 @@ class ReactPublisherAdView extends RelativeLayout implements AppEventListener, L
         AdSize adSize = this.adView.getAdSize();
         AdSize[] adSizes = this.adView.getAdSizes();
 
-        if (adSizes != null && adSizes.length >= 1 && adSizes[0].isFluid()) {
-            width = (int) PixelUtil.toDIPFromPixel(getDeviceWidth());
-            height = (int) Math.round(width / (this.fluidRatio != null ? this.fluidRatio.doubleValue() : 1.5));
+        // We pass ['fluid', 'mediumRectangle'] as valid sizes
+        if (adSizes != null && adSizes.length >= 1 && (adSizes[0].isFluid() || adSizes[1].isFluid())) {
+            // Figure out if we got a mediumRectangle or Fluid and set height/width accordingly
+            if (adSize.getWidth() == 300 && adSize.getHeight() == 250) {
+                width = adSize.getWidth();
+                height = adSize.getHeight();
+            }
+            else {
+                width = (int) PixelUtil.toDIPFromPixel(getDeviceWidth());
+                height = (int) Math.round(width / (this.fluidRatio != null ? this.fluidRatio.doubleValue() : 1.5));
+            }
         } else if (adSize == AdSize.SMART_BANNER) {
             width = (int) PixelUtil.toDIPFromPixel(adSize.getWidthInPixels(reactContext));
             height = (int) PixelUtil.toDIPFromPixel(adSize.getHeightInPixels(reactContext));
@@ -135,9 +143,6 @@ class ReactPublisherAdView extends RelativeLayout implements AppEventListener, L
 
         event.putDouble("width", width);
         event.putDouble("height", height);
-        if (this.fluidRatio != null) {
-          event.putDouble("fluidRatio", this.fluidRatio.doubleValue());
-        }
         sendEvent(RNPublisherBannerViewManager.EVENT_SIZE_CHANGE, event);
     }
 
