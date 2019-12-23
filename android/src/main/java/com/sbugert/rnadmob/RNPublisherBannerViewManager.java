@@ -122,8 +122,16 @@ class ReactPublisherAdView extends RelativeLayout implements AppEventListener, L
         AdSize adSize = this.adView.getAdSize();
         AdSize[] adSizes = this.adView.getAdSizes();
 
+        boolean hasFluid = false;
+        for (int i = 0; i < adSizes.length; i++) {
+            if (adSizes[i].isFluid()) {
+              hasFluid = true;
+              break;
+            }
+        }
+
         // We pass ['fluid', 'mediumRectangle'] as valid sizes
-        if (adSizes != null && adSizes.length >= 1 && (adSizes[0].isFluid() || adSizes[1].isFluid())) {
+        if (adSizes != null && adSizes.length >= 1 && hasFluid) {
             // Figure out if we got a mediumRectangle or Fluid and set height/width accordingly
             if (adSize.getWidth() == 300 && adSize.getHeight() == 250) {
                 width = adSize.getWidth();
@@ -394,7 +402,7 @@ public class RNPublisherBannerViewManager extends ViewGroupManager<ReactPublishe
                 return AdSize.MEDIUM_RECTANGLE;
             case "fullBanner":
                 return AdSize.FULL_BANNER;
-            case "leaderBoard":
+            case "leaderboard":
                 return AdSize.LEADERBOARD;
             case "smartBannerPortrait":
                 return AdSize.SMART_BANNER;
